@@ -1,4 +1,4 @@
-FROM phpdockerio/php73-fpm:latest
+FROM phpdockerio/php74-fpm:latest
 #WORKDIR "/application"
 # Fix debconf warnings upon build
 ARG DEBIAN_FRONTEND=noninteractive
@@ -8,8 +8,8 @@ RUN sed -i -e "s#http://archive#http://`curl ifconfig.co/country-iso`.archive#g"
 
 # Install selected extensions and other stuff
 RUN apt-get update \
-    && apt-get -y --no-install-recommends install php7.3-mysql php-redis php7.3-gd php-imagick php7.3-intl php-mongodb \
-    php7.3-xsl php-yaml php-xdebug php7.3-bcmath
+    && apt-get -y --no-install-recommends install php7.4-mysql php-redis php7.4-gd php-imagick php7.4-intl php-mongodb \
+    php7.4-xsl php-yaml php-xdebug php7.4-bcmath
 
 # Packages for wkhtmltopdf
 RUN apt-get install -y fontconfig libfontconfig1 libfreetype6 libpng-dev libssl1.0.0 \
@@ -29,7 +29,7 @@ RUN apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/
     && export TERM=xterm
 
 # Apply custom php.ini
-COPY php-ini-overrides.ini /etc/php/7.3/fpm/conf.d/99-overrides.ini
+COPY php-ini-overrides.ini /etc/php/7.4/fpm/conf.d/99-overrides.ini
 
 # php-fpm - Startup Script
 COPY php-fpm-script /usr/bin/php-fpm
@@ -37,7 +37,7 @@ RUN chmod +x /usr/bin/php-fpm
 
 # php-fpm - Pool file as root
 
-#COPY www.conf /etc/php/7.3/fpm/pool.d/www.conf
+#COPY www.conf /etc/php/7.4/fpm/pool.d/www.conf
 
 # Switch container to superevisord
 #ENTRYPOINT ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisord.conf"]

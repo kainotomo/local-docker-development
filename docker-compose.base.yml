@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
     traefik:
-      image: traefik:1.7.12
+      image: traefik:1.7.20
       ports:
         - ${COMPOSE_PORT_HTTP}:80
         - ${COMPOSE_PORT_HTTPS}:443

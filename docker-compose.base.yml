@@ -1,0 +1,100 @@
+version: '3.6'
+
+services:
+    traefik:
+      image: traefik:1.7.12
+      ports:
+        - ${COMPOSE_PORT_HTTP}:80
+        - ${COMPOSE_PORT_HTTPS}:443
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - ./traefik/traefik.toml:/traefik.toml
+        - ./traefik/ssl/:/ssl/
+        - ./logs:/logs
+      container_name: traefik
+      labels:
+          - "traefik.enable=true"
+          - "traefik.frontend.rule=Host:traefik.${COMPOSE_BASE_DOMAIN}"
+          - "traefik.backend=traefik"
+          - "traefik.port=8080"    
+
+    nginx:
+      image: nginx:alpine
+      container_name: nginx
+      hostname: nginx
+      volumes:
+          - ../j3/:/j3/:rw
+          - ./include/nginx_local/conf.d/:/etc/nginx/conf.d/:ro
+      depends_on:
+          - php-fpm
+      networks:
+        default:
+          aliases:
+            - nginx-j3            
+      labels:
+          - "traefik.enable=true"
+          - "traefik.frontend.rule=HostRegexp:{catchall:.*}"
+          - "traefik.frontend.priority=1"
+          - "traefik.backend=nginx"
+          - "traefik.port=80"    
+
+    mariadb:
+      image: mariadb:10.4
+      container_name: mariadb
+      hostname: mariadb
+      volumes:
+        - ./backup:/backup
+      ports:
+        - ${COMPOSE_PORT_MYSQL}:3306
+      environment:
+        - MYSQL_ROOT_PASSWORD=root
+
+    php-fpm:
+      build:
+        context: ./include/php-fpm
+      container_name: php-fpm
+      hostname: php-fpm
+      volumes:
+        - ../j3/:/j3/:rw
+
+    phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      container_name: phpmyadmin
+      hostname: phpmyadmin
+      environment:
+        - PMA_USER=root
+        - PMA_PASSWORD=root
+        - PMA_HOST=mariadb
+      depends_on:
+        - mariadb
+      volumes:
+        - /sessions
+      labels:
+          - "traefik.enable=true"
+          - "traefik.frontend.rule=Host:phpmyadmin.${COMPOSE_BASE_DOMAIN}"
+          - "traefik.backend=phpmyadmin"
+          - "traefik.port=80"
+
+    mailhog:
+      image: mailhog/mailhog:latest
+      container_name: mailhog
+      labels:
+          - "traefik.enable=true"
+          - "traefik.frontend.rule=Host:mailhog.${COMPOSE_BASE_DOMAIN}"
+          - "traefik.backend=mailhog"
+          - "traefik.port=8025"
+
+    nodejs:
+      image: node:9-alpine
+      container_name: nodejs
+      hostname: nodejs
+      working_dir: /application
+      volumes:
+          - ../j3/:/j3/:rw
+      command: echo "Container ready."
+
+
+networks:
+  default:
+    name: intergo-local-net
+    driver: bridge
